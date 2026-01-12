@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penjana OPR SMK Tok Dor - PLC Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --bg-body: #ecf0f1;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --accent: #2980b9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-body);
+            padding: 20px;
+            margin: 0;
+        }
+
+        .input-container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+        }
+
+        .input-header img { height: 70px; }
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 5px; color: var(--primary); }
+        
+        input, textarea, select {
+            width: 100%; padding: 10px; border: 1px solid #bdc3c7;
+            border-radius: 5px; box-sizing: border-box; font-family: inherit;
+            background-color: #fff;
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            border: none; padding: 15px; border-radius: 6px;
+            font-weight: bold; cursor: pointer; font-size: 16px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-generate { background: var(--success); color: white; }
+        .btn-reset { background: var(--danger); color: white; }
+        .btn:hover { opacity: 0.9; }
+
+        .draf-status { font-size: 12px; color: #7f8c8d; font-style: italic; margin-top: 5px; }
+
+        /* PDF TEMPLATE */
+        #pdf-content {
+            display: none;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            box-sizing: border-box;
+            background: white;
+            color: black;
+        }
+
+        .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .title-section { text-align: center; border-bottom: 3px double black; margin-bottom: 15px; padding-bottom: 5px; }
+        .title-section h2 { margin: 0; font-size: 15pt; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 10px; }
+        th, td { border: 1px solid black; padding: 6px 10px; font-size: 10.5pt; vertical-align: top; line-height: 1.4; }
+        th { background: #f2f2f2; width: 32%; text-align: left; }
+
+        .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 5px; }
+        .img-box { border: 1px solid black; height: 110px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .signature-area { display: flex; justify-content: space-between; margin-top: 25px; }
+        .sig-col { width: 45%; font-size: 10.5pt; }
+        .sig-line { border-top: 1px solid black; margin-top: 45px; margin-bottom: 5px; width: 80%; }
+    </style>
+</head>
+<body>
+
+<div class="input-container">
+    <div class="input-header">
+        <img src="https://i.postimg.cc/Bv1qRtCx/lencana-smktd.jpg" alt="SMKTD">
+        <div style="text-align: center;">
+            <h2 style="margin:0; color:var(--primary);">LAPORAN OPR</h2>
+            <div style="font-weight: bold;">SMK TOK DOR</div>
+        </div>
+        <img src="https://i.postimg.cc/6pX5NqfL/ts25.png" alt="TS25">
+    </div>
+
+    <form id="oprForm">
+        <div class="form-group"><label>Tajuk Program / Aktiviti</label><input type="text" id="tajuk" oninput="saveDraft()"></div>
+        <div class="form-group"><label>Anjuran / Nama Penyelaras</label><input type="text" id="penyelaras" oninput="saveDraft()"></div>
+        
+        <div style="display: flex; gap: 15px;">
+            <div class="form-group" style="flex:1;"><label>Tarikh</label><input type="date" id="tarikh" oninput="saveDraft()"></div>
+            <div class="form-group" style="flex:1;"><label>Masa</label><input type="text" id="masa" placeholder="Contoh: 8.00 pagi" oninput="saveDraft()"></div>
+        </div>
+
+        <div class="form-group"><label>Tempat</label><input type="text" id="tempat" oninput="saveDraft()"></div>
+        <div class="form-group"><label>Nama & No. KP Peserta</label><input type="text" id="peserta" oninput="saveDraft()"></div>
+        <div class="form-group"><label>Fokus / Butiran Aktiviti</label><textarea id="butiran" rows="2" oninput="saveDraft()"></textarea></div>
+        <div class="form-group"><label>Objektif Pelaksanaan</label><textarea id="objektif" rows="2" oninput="saveDraft()"></textarea></div>
+        
+        <div class="form-group">
+            <label>Strategi PLC</label>
+            <select id="plc" onchange="saveDraft()">
+                <option value="">-- Pilih Strategi PLC --</option>
+                <option value="Learning Walks">Learning Walks</option>
+                <option value="Peer Coaching">Peer Coaching</option>
+                <option value="Lesson Study">Lesson Study</option>
+                <option value="Teacher Sharing Sessions">Teacher Sharing Sessions</option>
+                <option value="Video Critiques">Video Critiques</option>
+                <option value="Data Analysis">Data Analysis</option>
+                <option value="Problem Solving Groups">Problem Solving Groups</option>
+                <option value="Tidak Berkaitan">Tidak Berkaitan</option>
+            </select>
+        </div>
+
+        <div class="form-group"><label>Dapatan / Kekuatan / Impak</label><textarea id="dapatan" rows="2" oninput="saveDraft()"></textarea></div>
+        
+        <div class="form-group">
+            <label>Muat Naik 6 Gambar (Pilih semua serentak)</label>
+            <input type="file" id="files" accept="image/*" multiple onchange="handleImages(this)">
+            <div class="draf-status" id="status-msg">Draf disimpan secara automatik.</div>
+        </div>
+
+        <div class="action-btns">
+            <button type="button" class="btn btn-reset" onclick="resetForm()">KOSONGKAN BORANG</button>
+            <button type="button" class="btn btn-generate" onclick="generatePDF()">JANA PDF (A4)</button>
+        </div>
+    </form>
+</div>
+
+<div id="pdf-content">
+    <div class="report-header">
+        <img src="https://i.postimg.cc/Bv1qRtCx/lencana-smktd.jpg" style="height: 55px;">
+        <img src="https://i.postimg.cc/6pX5NqfL/ts25.png" style="height: 55px;">
+    </div>
+
+    <div class="title-section">
+        <h2 style="font-size: 14pt; margin-bottom: 2px;">ONE PAGE REPORT (OPR)</h2>
+        <div style="font-size: 13pt; font-weight: bold;">SMK TOK DOR, 22020 BESUT, TERENGGANU</div>
+    </div>
+
+    <table>
+        <tr><th>TAJUK PROGRAM</th><td id="out-tajuk" style="text-transform:uppercase; font-weight:bold;"></td></tr>
+        <tr><th>ANJURAN/PENYELARAS</th><td id="out-penyelaras"></td></tr>
+        <tr><th>TARIKH / MASA / TEMPAT</th><td><span id="out-tarikh"></span> | <span id="out-masa"></span> | <span id="out-tempat"></span></td></tr>
+        <tr><th>PESERTA</th><td id="out-peserta"></td></tr>
+        <tr><th>OBJEKTIF</th><td id="out-objektif"></td></tr>
+        <tr><th>STRATEGI PLC</th><td id="out-plc"></td></tr>
+        <tr><th>BUTIRAN AKTIVITI</th><td id="out-butiran"></td></tr>
+        <tr><th>DAPATAN & IMPAK</th><td id="out-dapatan"></td></tr>
+    </table>
+
+    <div style="font-weight: bold; font-size: 10pt; margin-bottom: 4px;">GAMBAR AKTIVITI:</div>
+    <div class="image-grid">
+        <div class="img-box" id="box0"></div><div class="img-box" id="box1"></div><div class="img-box" id="box2"></div>
+        <div class="img-box" id="box3"></div><div class="img-box" id="box4"></div><div class="img-box" id="box5"></div>
+    </div>
+
+    <div class="signature-area">
+        <div class="sig-col">
+            Disediakan oleh:
+            <div class="sig-line"></div>
+            <div id="out-nama-sig" style="font-weight:bold;">( )</div>
+            Penyelaras Program
+        </div>
+        <div class="sig-col">
+            Disahkan oleh:
+            <div class="sig-line"></div>
+            <div style="font-weight:bold;">( )</div>
+            Pentadbir SMK Tok Dor
+        </div>
+    </div>
+</div>
+
+<script>
+    let imageFiles = [];
+
+    window.onload = function() {
+        const draf = JSON.parse(localStorage.getItem('opr_draf'));
+        if (draf) {
+            Object.keys(draf).forEach(key => {
+                if(document.getElementById(key)) {
+                    document.getElementById(key).value = draf[key];
+                }
+            });
+            document.getElementById('status-msg').innerText = "Draf sedia ada dimuatkan semula.";
+        }
+    };
+
+    function saveDraft() {
+        const fields = ['tajuk', 'penyelaras', 'tarikh', 'masa', 'tempat', 'peserta', 'butiran', 'objektif', 'plc', 'dapatan'];
+        const data = {};
+        fields.forEach(f => data[f] = document.getElementById(f).value);
+        localStorage.setItem('opr_draf', JSON.stringify(data));
+        document.getElementById('status-msg').innerText = "Draf disimpan...";
+    }
+
+    function resetForm() {
+        if(confirm("Adakah anda pasti untuk memadam semua input?")) {
+            localStorage.removeItem('opr_draf');
+            document.getElementById('oprForm').reset();
+            document.getElementById('status-msg').innerText = "Borang dikosongkan.";
+        }
+    }
+
+    function handleImages(input) {
+        imageFiles = Array.from(input.files).slice(0, 6);
+    }
+
+    async function generatePDF() {
+        const fields = ['tajuk', 'penyelaras', 'tarikh', 'masa', 'tempat', 'peserta', 'butiran', 'objektif', 'plc', 'dapatan'];
+        fields.forEach(f => {
+            document.getElementById('out-' + f).innerText = document.getElementById(f).value || '-';
+        });
+        
+        document.getElementById('out-nama-sig').innerText = `( ${document.getElementById('penyelaras').value.toUpperCase() || ' '} )`;
+
+        for(let i=0; i<6; i++) {
+            const box = document.getElementById('box' + i);
+            box.innerHTML = ''; 
+            if (imageFiles[i]) {
+                const img = document.createElement('img');
+                img.src = await convertBase64(imageFiles[i]);
+                box.appendChild(img);
+            }
+        }
+
+        const element = document.getElementById('pdf-content');
+        element.style.display = 'block';
+
+        const opt = {
+            margin: 0,
+            filename: `OPR_SMKTD_${document.getElementById('tajuk').value.substring(0,15)}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            element.style.display = 'none';
+        });
+    }
+
+    function convertBase64(file) {
+        return new Promise((res) => {
+            const reader = new FileReader();
+            reader.onload = (e) => res(e.target.result);
+            reader.readAsDataURL(file);
+        });
+    }
+</script>
+
+</body>
+</html>
